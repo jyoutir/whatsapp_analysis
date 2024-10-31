@@ -1,6 +1,8 @@
 import re
+import os
 from collections import Counter
 from datetime import datetime
+from pathlib import Path
 
 def read_chat_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -46,8 +48,8 @@ def analyze_chat(messages):
     
     return message_counts, hour_activity, message_lengths
 
-def print_stats(message_counts, hour_activity, message_lengths):
-    print("\n=== WhatsApp Chat Analysis ===\n")
+def print_stats(message_counts, hour_activity, message_lengths, chat_name):
+    print(f"\n=== WhatsApp Chat Analysis for {chat_name} ===\n")
     
     print("Messages per person:")
     total_messages = sum(message_counts.values())
@@ -66,21 +68,41 @@ def print_stats(message_counts, hour_activity, message_lengths):
     
     print(f"\nTotal messages: {total_messages}")
 
-def main():
+def process_chat_file(file_path):
     try:
         # Read and parse chat
-        chat_lines = read_chat_file('_chat.txt')
+        chat_lines = read_chat_file(file_path)
         messages = [parse_message(line) for line in chat_lines if line.strip()]
         messages = [msg for msg in messages if msg is not None]
         
+        if not messages:
+            print(f"No valid messages found in {file_path}")
+            return
+        
         # Analyze and print stats
         message_counts, hour_activity, message_lengths = analyze_chat(messages)
-        print_stats(message_counts, hour_activity, message_lengths)
+        print_stats(message_counts, hour_activity, message_lengths, file_path.name)
         
-    except FileNotFoundError:
-        print("Error: Chat file '_chat.txt' not found!")
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        print(f"Error processing {file_path}: {str(e)}")
+
+def main():
+    # Create chats directory if it doesn't exist
+    chats_dir = Path('chats')
+    chats_dir.mkdir(exist_ok=True)
+    
+    # Process all .txt files in the chats directory
+    chat_files = list(chats_dir.glob('*.txt'))
+    
+    if not chat_files:
+        print("No chat files found in the 'chats' directory!")
+        return
+    
+    print(f"Found {len(chat_files)} chat file(s)")
+    
+    for chat_file in chat_files:
+        print(f"\nProcessing: {chat_file}")
+        process_chat_file(chat_file)
 
 if __name__ == "__main__":
     main()
